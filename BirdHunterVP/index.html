@@ -1,0 +1,243 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Kirin Storm - Multiplayer</title>
+    <meta name="viewport" content="width=device-width,height=device-height,initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="full-screen" content="true" />
+    <meta name="screen-orientation" content="portrait" />
+    <meta name="x5-fullscreen" content="true" />
+    <meta name="360-fullscreen" content="true" />
+    <style>
+        html, body {
+            -ms-touch-action: none;
+            background: #000;
+            padding: 0;
+            border: 0;
+            margin: 0;
+            height: 100%;
+        }
+        .game-box {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+        }
+        .lobby {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        .lobby h1 {
+            font-size: 48px;
+            margin-bottom: 40px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        .lobby input {
+            padding: 15px 30px;
+            font-size: 18px;
+            border: none;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            width: 300px;
+            text-align: center;
+        }
+        .lobby button {
+            padding: 15px 50px;
+            font-size: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .lobby button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        .players-count {
+            margin-top: 30px;
+            font-size: 16px;
+            color: #888;
+        }
+        .hidden {
+            display: none !important;
+        }
+    </style>
+    <script type="text/javascript" src="jquery.min.js"></script>
+</head>
+
+<body>
+    <div id="lobby" class="lobby">
+        <h1>Kirin Storm Multiplayer</h1>
+        <input type="text" id="nickname" placeholder="Enter your nickname" maxlength="20" />
+        <button id="joinGame">Join Game</button>
+        <p class="players-count">Multiple players can join the same room!</p>
+    </div>
+    
+    <div class="game-box">
+        <div id="game" style="margin: auto;" class="egret-player"
+             data-entry-class="Main"
+             data-orientation="landscape"
+             data-scale-mode="exactFit"
+             data-frame-rate="30"
+             data-content-width="1136"
+             data-content-height="640"
+             data-show-paint-rect="false"
+             data-multi-fingered="2"
+             data-show-fps="false" data-show-log="false"
+             data-show-fps-style="x:0,y:0,size:12,textColor:0xffffff,bgAlpha:0.9">
+        </div>
+    </div>
+    
+    <script type="text/javascript">
+        window["CDNADDRESS"] = "cdn/";
+        CDNADDRESS = "cdn/";
+    </script>
+    <script src="skdm.js?v=1593785445"></script>
+    <script>
+        var msglang = 'en';
+        var lang = 'en';
+        var sessionToken = 'MP_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        var hostname = window.location.hostname;
+        var port = window.location.port || (window.location.protocol === 'https:' ? '443' : '80');
+        
+        if (window.location.protocol === 'https:') {
+            WEBSOCKETURL = 'wss://' + hostname;
+            SELSVRURL = 'https://' + hostname + "/game/KirinStormVP/server?command=init";
+        } else {
+            WEBSOCKETURL = 'ws://' + hostname;
+            SELSVRURL = 'http://' + hostname + "/game/KirinStormVP/server?command=init";
+        }
+        
+        if (port && port !== '80' && port !== '443') {
+            WEBSOCKETURL += ':' + port;
+        }
+        WEBSOCKETURL += '/websocket';
+        
+        PLATFORMSELSVR = 0;
+        
+        var playerNickname = 'Player';
+        
+        sessionStorage.setItem('sessionId', Date.now());
+        
+        window.getPlayerNickname = function() {
+            return sessionStorage.getItem('playerNickname') || 'Player';
+        };
+        
+        var loadScript = function (list, callback) {
+            var loaded = 0;
+            var loadNext = function () {
+                loadSingleScript(list[loaded], function () {
+                    loaded++;
+                    if (loaded >= list.length) {
+                        callback();
+                    } else {
+                        loadNext();
+                    }
+                })
+            };
+            loadNext();
+        };
+
+        var loadSingleScript = function (src, callback) {
+            var s = document.createElement('script');
+            s.async = false;
+            s.src = CDNADDRESS + src + '.js';
+            s.addEventListener('load', function () {
+                s.parentNode.removeChild(s);
+                s.removeEventListener('load', arguments.callee, false);
+                callback();
+            }, false);
+            document.body.appendChild(s);
+        };
+        
+        function startGame() {
+            document.getElementById('lobby').classList.add('hidden');
+            
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', 'manifest/1011.json?v=' + Math.random(), true);
+            xhr.addEventListener("load", function () {
+                var manifest = JSON.parse(xhr.response);
+                var list = manifest.initial.concat(manifest.game);
+                loadScript(list, function () {
+                    egret.runEgret({
+                        renderMode: "webgl",
+                        audioType: 2,
+                        calculateCanvasScaleFactor: function(context) {
+                            var backingStore = context.backingStorePixelRatio ||
+                                context.webkitBackingStorePixelRatio ||
+                                context.mozBackingStorePixelRatio ||
+                                context.msBackingStorePixelRatio ||
+                                context.oBackingStorePixelRatio ||
+                                context.backingStorePixelRatio || 1;
+                            return (window.devicePixelRatio || 1) / backingStore;
+                        }
+                    });
+                });
+            });
+            xhr.send(null);
+        }
+        
+        document.getElementById('joinGame').addEventListener('click', function() {
+            var nickname = document.getElementById('nickname').value.trim() || 'Player';
+            playerNickname = nickname;
+            sessionStorage.setItem('playerNickname', nickname);
+            document.cookie = 'playerNickname=' + encodeURIComponent(nickname) + '; path=/';
+            startGame();
+        });
+        
+        document.getElementById('nickname').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('joinGame').click();
+            }
+        });
+        
+        window.onresize = function onresize() {
+            var width, height;
+            var clientWidth = document.body.clientWidth;
+            var clientHeight = document.body.clientHeight;
+            
+            if (document.body.clientWidth < document.body.clientHeight) {
+                clientWidth = document.body.clientHeight;
+                clientHeight = document.body.clientWidth;
+            }
+
+            if (clientWidth / clientHeight > 18 / 9) {
+                width = clientHeight * 18 / 9;
+                height = clientHeight;
+            } else if (clientWidth / clientHeight < 16 / 9) {
+                width = clientWidth;
+                height = clientWidth * 9 / 16;
+            } else {
+                width = clientHeight * 16 / 9;
+                height = clientHeight;
+            }
+
+            var game = document.getElementById('game');
+            if (document.body.clientWidth > document.body.clientHeight) {
+                game.style.width = width + 'px';
+                game.style.height = height + 'px';
+            } else {
+                game.style.width = height + 'px';
+                game.style.height = width + 'px';
+            }
+        }
+
+        window.onresize();
+    </script>
+</body>
+</html>

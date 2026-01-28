@@ -1,0 +1,17 @@
+{
+  "name": "kirin-storm-multiplayer",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": ["game", "multiplayer", "websocket"],
+  "author": "",
+  "license": "ISC",
+  "description": "Multiplayer Kirin Storm game with WebSocket support",
+  "dependencies": {
+    "express": "^5.2.1",
+    "ws": "^8.19.0"
+  }
+}
