@@ -5,12 +5,54 @@ const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
-const wss = new WebSocket.Server({ server, path: '/websocket' });
+const wss = new WebSocket.Server({ server });
 
 app.use(express.static(path.join(__dirname, 'BirdHunterVP')));
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'BirdHunterVP', 'index.html'));
+});
+
+app.get('/game/KirinStormVP/server', (req, res) => {
+  const command = req.query.command || '';
+  const decodedCommand = decodeURIComponent(command);
+  
+  if (decodedCommand.includes('fishRoomTypeInfo')) {
+    res.json({
+      Code: 20000,
+      Message: "Success",
+      Data: {
+        fishRoomMod: 1,
+        roomTypeInfo: {
+          money: 100000,
+          limit: [
+            { roomtype: 0, limitBalance: 1000 },
+            { roomtype: 1, limitBalance: 10000 },
+            { roomtype: 2, limitBalance: 50000 }
+          ]
+        }
+      }
+    });
+  } else if (decodedCommand.includes('servids')) {
+    res.json({
+      Code: 20000,
+      Message: "Success",
+      Data: {
+        res: [{ servid: '1' }]
+      }
+    });
+  } else if (command === 'init') {
+    res.json({
+      succ: true,
+      errinfo: "ok",
+      message: {
+        serverTime: Date.now(),
+        wsUrl: '/websocket'
+      }
+    });
+  } else {
+    res.json({ succ: true, errinfo: "ok", message: {} });
+  }
 });
 
 const FISH_PAYTABLE = {
@@ -420,6 +462,7 @@ class RoomManager {
 const roomManager = new RoomManager();
 
 wss.on('connection', (ws) => {
+  console.log('New WebSocket connection');
   let currentRoom = null;
   let currentPlayer = null;
 
@@ -427,9 +470,10 @@ wss.on('connection', (ws) => {
     try {
       const message = JSON.parse(data.toString());
       const gameData = message.gameData || message;
+      console.log('Received:', gameData.type);
       handleMessage(ws, gameData, message);
     } catch (e) {
-      console.error('Error parsing message:', e);
+      console.error('Error parsing message:', e, 'Data:', data.toString().substring(0, 100));
     }
   });
 
