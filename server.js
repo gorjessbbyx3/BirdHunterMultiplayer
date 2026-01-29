@@ -7,6 +7,16 @@ const app = express();
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
+// CORS middleware
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type');
+  res.header('Cache-Control', 'no-cache, no-store, must-revalidate');
+  console.log(`[HTTP] ${req.method} ${req.url}`);
+  next();
+});
+
 app.use(express.static(path.join(__dirname, 'BirdHunterVP')));
 
 app.get('/', (req, res) => {
