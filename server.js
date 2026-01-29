@@ -16,6 +16,7 @@ app.get('/', (req, res) => {
 app.get('/game/KirinStormVP/server', (req, res) => {
   const command = req.query.command || '';
   const decodedCommand = decodeURIComponent(command);
+  console.log('HTTP request:', decodedCommand);
   
   if (decodedCommand.includes('fishRoomTypeInfo')) {
     res.json({
