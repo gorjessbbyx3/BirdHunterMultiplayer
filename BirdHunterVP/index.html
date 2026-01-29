@@ -115,18 +115,18 @@
         var hostname = window.location.hostname;
         var port = window.location.port || (window.location.protocol === 'https:' ? '443' : '80');
         
-        var baseUrl = window.location.protocol + '//' + hostname;
+        var portSuffix = '';
         if (port && port !== '80' && port !== '443') {
-            baseUrl += ':' + port;
+            portSuffix = ':' + port;
         }
         
         if (window.location.protocol === 'https:') {
-            WEBSOCKETURL = 'wss://' + hostname + (port && port !== '443' ? ':' + port : '') + '/websocket';
+            WEBSOCKETURL = 'wss://' + hostname + portSuffix + '/websocket';
+            SELSVRURL = 'https://' + hostname + portSuffix + "/game/KirinStormVP/server?command=init";
         } else {
-            WEBSOCKETURL = 'ws://' + hostname + (port && port !== '80' ? ':' + port : '') + '/websocket';
+            WEBSOCKETURL = 'ws://' + hostname + portSuffix + '/websocket';
+            SELSVRURL = 'http://' + hostname + portSuffix + "/game/KirinStormVP/server?command=init";
         }
-        
-        SELSVRURL = baseUrl + "/game/KirinStormVP/server?command=";
         
         PLATFORMSELSVR = 1;
         
